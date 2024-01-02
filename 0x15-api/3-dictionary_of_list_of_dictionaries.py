@@ -1,39 +1,62 @@
 #!/usr/bin/python3
+""" 3. Record data from all users to JSON file output. """
 
-"""
-Python script that exports data in the JSON format.
-"""
-
-from requests import get
+import csv
 import json
+import requests
+import sys
 
 if __name__ == "__main__":
-    response = get('https://jsonplaceholder.typicode.com/todos/')
-    data = response.json()
+    users = requests.get('https://jsonplaceholder.typicode.com/users')
+    users_d = users.json()
+    num_users = len(users_d) + 1
+    all_data = {}
+    for id in range(1, num_users):
+        info = requests.get(
+            'https://jsonplaceholder.typicode.com/users/{}'.format(id))
+        todo = requests.get(
+            'https://jsonplaceholder.typicode.com/todos?userId={}'.format(id))
 
-    row = []
-    response2 = get('https://jsonplaceholder.typicode.com/users')
-    data2 = response2.json()
+        infod = info.json()
+        todod = todo.json()
 
-    new_dict1 = {}
+        name = infod.get('name')
+        user_name = infod.get('username')
+        tasks = len(todod)
 
-    for j in data2:
+        count = 0
+        for comp in todod:
+            finished = comp.get('completed')
+            if finished:
+                count += 1
 
-        row = []
-        for i in data:
+        dict_list = []
+        json_dict = {}
+        for task in todod:
+            json_dict = {
+                "task": task.get('title'),
+                "completed": task.get('completed'),
+                "username": infod.get('username')}
+            dict_list.append(json_dict)
+        all_data[id] = dict_list
 
-            new_dict2 = {}
+    with open('todo_all_employees.json', 'w') as emp_tasks:
+        json.dump(all_data, emp_tasks)
 
-            if j['id'] == i['userId']:
+    # print('Employee {} is done with tasks({}/{}):'.format(
+    #     name, count, tasks))
+    # for task in todod:
+    #     completed = task.get('completed')
+    #     if completed:
+    #         title = task.get('title')
+    #         print("\t {}".format(title))
 
-                new_dict2['username'] = j['username']
-                new_dict2['task'] = i['title']
-                new_dict2['completed'] = i['completed']
-                row.append(new_dict2)
-
-        new_dict1[j['id']] = row
-
-    with open("todo_all_employees.json",  "w") as f:
-
-        json_obj = json.dumps(new_dict1)
-        f.write(json_obj)
+    # with open('{}.csv'.format(id), 'w') as emp_tasks:
+    #     emp_writer = csv.writer(emp_tasks, delimiter=',', quotechar='"',
+    #                             quoting=csv.QUOTE_ALL)
+    #     for task in todod:
+    #         uid = task.get('userId')
+    #         comp = task.get('completed')
+    #         title = task.get('title')
+    #         write_list = [uid, user_name, comp, title]
+    #         emp_writer.writerow(write_list)

@@ -1,35 +1,44 @@
 #!/usr/bin/python3
+""" 1. Input employee ID, output info to CSV file. """
 
-"""
-Python script that exports data in the CSV format
-"""
-
-from requests import get
-from sys import argv
 import csv
+import requests
+import sys
 
 if __name__ == "__main__":
-    response = get('https://jsonplaceholder.typicode.com/todos/')
-    data = response.json()
+    id = sys.argv[1]
+    info = requests.get('https://jsonplaceholder.typicode.com/users/{}'.format(
+        id))
+    todo = requests.get(
+        'https://jsonplaceholder.typicode.com/todos?userId={}'.format(id))
 
-    row = []
-    response2 = get('https://jsonplaceholder.typicode.com/users')
-    data2 = response2.json()
+    infod = info.json()
+    todod = todo.json()
 
-    for i in data2:
-        if i['id'] == int(argv[1]):
-            employee = i['username']
+    name = infod.get('name')
+    user_name = infod.get('username')
+    tasks = len(todod)
 
-    with open(argv[1] + '.csv', 'w', newline='') as file:
-        writ = csv.writer(file, quoting=csv.QUOTE_ALL)
+    count = 0
+    for comp in todod:
+        finished = comp.get('completed')
+        if finished:
+            count += 1
 
-        for i in data:
+    # print('Employee {} is done with tasks({}/{}):'.format(
+    #     name, count, tasks))
+    # for task in todod:
+    #     completed = task.get('completed')
+    #     if completed:
+    #         title = task.get('title')
+    #         print("\t {}".format(title))
 
-            row = []
-            if i['userId'] == int(argv[1]):
-                row.append(i['userId'])
-                row.append(employee)
-                row.append(i['completed'])
-                row.append(i['title'])
-
-                writ.writerow(row)
+    with open('{}.csv'.format(id), 'w') as emp_tasks:
+        emp_writer = csv.writer(emp_tasks, delimiter=',', quotechar='"',
+                                quoting=csv.QUOTE_ALL)
+        for task in todod:
+            uid = task.get('userId')
+            comp = task.get('completed')
+            title = task.get('title')
+            write_list = [uid, user_name, comp, title]
+            emp_writer.writerow(write_list)
